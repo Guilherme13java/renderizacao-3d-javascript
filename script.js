@@ -391,7 +391,7 @@ function drawFrame(){
     let dotZero = new vector3()
     dotZero = to2d(dotZero)
     dotZero = dotZero.add(new vector2(Screen.size.x/2, Screen.size.y/2))
-    Screen.drawPixel("C", dotZero)
+    Screen.drawPixel("X", dotZero)
 
 
     Screen.refresh()
