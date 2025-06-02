@@ -39,15 +39,14 @@ class vector2{
         return Math.sqrt(this.x*this.x+this.y*this.y)
     }
     unit(){
-        return this.div(Math.sqrt(this.x*this.x+this.y*this.y))
+        return this.div(this.magnitude())
     }
     //Reverificar
     rotate(angle){
         let vertice = this
         angle = angle.mul(Math.PI).div(180)
-        vertice = new vector3(vertice.x, vertice.y*Math.cos(angle.x)+Math.sin(angle.x)*vertice.z, vertice.z*Math.cos(angle.x)-Math.sin(angle.x)*vertice.y)
-        vertice = new vector3(vertice.x*Math.cos(angle.y)-Math.sin(angle.y)*vertice.z, vertice.y, vertice.z*Math.sin(angle.y)+Math.cos(angle.y)*vertice.z)
-        vertice = new vector3(vertice.x*Math.cos(angle.z)+Math.sin(angle.z)*vertice.y, -Math.sin(angle.z)*vertice.x+Math.cos(angle.z)*vertice.y, vertice.z)
+        vertice = new vector2(vertice.x, vertice.y*Math.cos(angle.x))
+        vertice = new vector2(vertice.x*Math.cos(angle.y), vertice.y)
         return vertice
     }
 }
@@ -87,16 +86,76 @@ class vector3{
         return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z)
     }
     unit(){
-        return this.div(Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z))
+        return this.div(this.magnitude())
     }
-    rotate(angle){
-        let vertice = this
+    rotate(angle) {
+        let vector = this
         angle = angle.mul(Math.PI).div(180)
-        vertice = new vector3(vertice.x, vertice.y*Math.cos(angle.x)+Math.sin(angle.x)*vertice.z, vertice.z*Math.cos(angle.x)-Math.sin(angle.x)*vertice.y)
-        vertice = new vector3(vertice.x*Math.cos(angle.y)-Math.sin(angle.y)*vertice.z, vertice.y, vertice.z*Math.sin(angle.y)+Math.cos(angle.y)*vertice.z)
-        vertice = new vector3(vertice.x*Math.cos(angle.z)+Math.sin(angle.z)*vertice.y, -Math.sin(angle.z)*vertice.x+Math.cos(angle.z)*vertice.y, vertice.z)
-        return vertice
+        const cosX = Math.cos(angle.x), sinX = Math.sin(angle.x)
+        const cosY = Math.cos(angle.y), sinY = Math.sin(angle.y)
+        const cosZ = Math.cos(angle.z), sinZ = Math.sin(angle.z)
+
+        vector = new vector3(vector.x*cosZ-vector.y*sinZ, vector.x*sinZ+vector.y*cosZ, vector.z)
+        vector = new vector3(vector.x*cosY+vector.z*sinY, vector.y, -vector.x*sinY+vector.z*cosY)
+        vector = new vector3(vector.x, vector.y*cosX-vector.z*sinX, vector.y*sinX+vector.z*cosX)
+        
+        return vector
     }
+    to2d(focalLenght){
+        if (this.z < -70){
+            return new vector2(NaN, NaN)
+        }
+        return new vector2(focalLenght*this.x/(focalLenght+this.z), focalLenght*this.y/(focalLenght+this.z))
+    }
+    forward(){
+        
+        //ERRO ESTÁ AQUI, CONFIRMADO!
+        //(POSSIVEL ERRO NA HORA DE CALCULAR A ROTAÇÃO "Z" DO DIRECTION) -> Averiguar
+        //FALHA NA HORA DE OLHAR PARA CIMA E ANDAR, FALHA NA HORA DE ANDAR PARA CIMA DEPOIS DE TER ROTACIONADO PARA O LADO, QUANDO SE ESTÁ NO LADO OPOSTO DO 0, 0, 0, O UP SE TORNA EM BAIXO
+        //X errado
+        //azimuth = x, elevation = y roll = z
+        //const x0 = Math.cos(angle.y)*Math.cos(angle.x)
+        //const y0 = Math.sin(angle.y)
+        //const z0 = Math.cos(angle.y)*Math.sin(angle.x)
+        
+        let angle = this.mul(Math.PI).div(180)
+
+        const x0 = Math.cos(angle.x)*Math.cos(angle.y)
+        const y0 = Math.sin(angle.x)
+        const z0 = Math.cos(angle.x)*Math.sin(angle.y)
+
+        const cosR = Math.cos(angle.z)
+        const sinR = Math.sin(angle.z)
+
+        const x = x0*cosR-y0*sinR
+        const y = x0*sinR+y0*cosR
+        const z = z0
+
+        let direction = new vector3(x, y, z)
+        return direction
+    }
+    /*forward() {
+    COMPLETAMENTE ERRADO
+        const [rx, ry, rz] = [this.x, this.y, this.z]
+      
+        // Calcula seno e cosseno para cada ângulo
+        const cx = Math.cos(rx), sx = Math.sin(rx)
+        const cy = Math.cos(ry), sy = Math.sin(ry)
+        const cz = Math.cos(rz), sz = Math.sin(rz)
+      
+        // Matriz de rotação composta (Z * Y * X)
+        const dir = [
+          cy * sz * sx + sy * cz,
+          sy * sz * sx - cy * cz,
+          sz * cx
+        ]
+      
+        // Normaliza o vetor de direção
+        const length = Math.hypot(dir[0], dir[1], dir[2])
+        let resultado = dir.map(v => v / length)
+        return new vector3(resultado[0], resultado[1], resultado[2])
+    }*/
+      
 }
 
 function rad(degrees){
@@ -135,37 +194,30 @@ Models.pyramid = [
 [new vector3(-0.5, -0.5, -0.5), new vector3(0, 0.5, 0)]
 ]
 Models.sphere = [
-[new vector3(1.41, 0, 0), new vector3(1, -1, 0)],
-[new vector3(1, -1, 0), new vector3(0, -1.41, 0)],
-[new vector3(0, -1.41, 0), new vector3(-1, -1, 0)],
-[new vector3(-1, -1, 0), new vector3(-1.41, 0, 0)],
-
-[new vector3(-1.41, 0, 0), new vector3(-1, 1, 0)],
-[new vector3(-1, 1, 0), new vector3(0, 1.41, 0)],
-[new vector3(0, 1.41, 0), new vector3(1, 1, 0)],
-[new vector3(1, 1, 0), new vector3(1.41, 0, 0)],
-
-
-[new vector3(1.41, 0, 0), new vector3(1, 0, -1)],
-[new vector3(1, 0, -1), new vector3(0, 0, -1.41)],
-[new vector3(0, 0, -1.41), new vector3(-1, 0, -1)],
-[new vector3(-1, 0, -1), new vector3(-1.41, 0, 0)],
-
-[new vector3(-1.41, 0, 0), new vector3(-1, 0, 1)],
-[new vector3(-1, 0, 1), new vector3(0, 0, 1.41)],
-[new vector3(0, 0, 1.41), new vector3(1, 0, 1)],
-[new vector3(1, 0, 1), new vector3(1.41, 0, 0)],
-
-
-[new vector3(0, 1.41, 0), new vector3(0, 1, -1)],
-[new vector3(0, 1, -1), new vector3(0, 0, -1.41)],
-[new vector3(0, 0, -1.41), new vector3(0, -1, -1)],
-[new vector3(0, -1, -1), new vector3(0, -1.41, 0)],
-
-[new vector3(0, -1.41, 0), new vector3(0, -1, 1)],
-[new vector3(0, -1, 1), new vector3(0, 0, 1.41)],
-[new vector3(0, 0, 1.41), new vector3(0, 1, 1)],
-[new vector3(0, 1, 1), new vector3(0, 1.41, 0)],
+[new vector3(0.5, 0, 0), new vector3(0.35355339059327373, -0.35355339059327373, 0)], 
+[new vector3(0.35355339059327373, -0.35355339059327373, 0), new vector3(0, -0.5, 0)], 
+[new vector3(0, -0.5, 0), new vector3(-0.35355339059327373, -0.35355339059327373, 0)], 
+[new vector3(-0.35355339059327373, -0.35355339059327373, 0), new vector3(-0.5, 0, 0)], 
+[new vector3(-0.5, 0, 0), new vector3(-0.35355339059327373, 0.35355339059327373, 0)], 
+[new vector3(-0.35355339059327373, 0.35355339059327373, 0), new vector3(0, 0.5, 0)], 
+[new vector3(0, 0.5, 0), new vector3(0.35355339059327373, 0.35355339059327373, 0)], 
+[new vector3(0.35355339059327373, 0.35355339059327373, 0), new vector3(0.5, 0, 0)], 
+[new vector3(0.5, 0, 0), new vector3(0.35355339059327373, 0, -0.35355339059327373)], 
+[new vector3(0.35355339059327373, 0, -0.35355339059327373), new vector3(0, 0, -0.5)], 
+[new vector3(0, 0, -0.5), new vector3(-0.35355339059327373, 0, -0.35355339059327373)], 
+[new vector3(-0.35355339059327373, 0, -0.35355339059327373), new vector3(-0.5, 0, 0)], 
+[new vector3(-0.5, 0, 0), new vector3(-0.35355339059327373, 0, 0.35355339059327373)], 
+[new vector3(-0.35355339059327373, 0, 0.35355339059327373), new vector3(0, 0, 0.5)], 
+[new vector3(0, 0, 0.5), new vector3(0.35355339059327373, 0, 0.35355339059327373)], 
+[new vector3(0.35355339059327373, 0, 0.35355339059327373), new vector3(0.5, 0, 0)], 
+[new vector3(0, 0.5, 0), new vector3(0, 0.35355339059327373, -0.35355339059327373)], 
+[new vector3(0, 0.35355339059327373, -0.35355339059327373), new vector3(0, 0, -0.5)], 
+[new vector3(0, 0, -0.5), new vector3(0, -0.35355339059327373, -0.35355339059327373)], 
+[new vector3(0, -0.35355339059327373, -0.35355339059327373), new vector3(0, -0.5, 0)], 
+[new vector3(0, -0.5, 0), new vector3(0, -0.35355339059327373, 0.35355339059327373)], 
+[new vector3(0, -0.35355339059327373, 0.35355339059327373), new vector3(0, 0, 0.5)], 
+[new vector3(0, 0, 0.5), new vector3(0, 0.35355339059327373, 0.35355339059327373)], 
+[new vector3(0, 0.35355339059327373, 0.35355339059327373), new vector3(0, 0.5, 0)]
 ]
 Models.cylinder = [
 [new vector3(1.41, -0.5, 0), new vector3(1, -0.5, -1)],
@@ -211,9 +263,64 @@ Models.cone = [
 [new vector3(1.41, -0.5, 0), new vector3(0, 0.5, 0)],
 [new vector3(-1.41, -0.5, 0), new vector3(0, 0.5, 0)],
 ]
-Models.dot = [[new vector3(0, 0, 0), new vector3(0, 0, 0)]]
+Models.dot = [[new vector3(0, 0, 0), new vector3(0.1, 0, 0)]]
 
-let letterRatio = 20
+/*Models.sphere2 = []
+let lados = 16
+let direction = new vector3(1, 0, 0)
+let old = undefined
+for (let i2 = 0; i2 < lados/2+1; i2++){
+    for (let i = 0; i < lados+1; i++){
+        if (old){
+            Models.sphere2.push([old.unit(), direction.unit()])
+        }
+        old = direction
+        direction = direction.rotate(new vector3(-360/lados*i2, 0, 360/lados))
+    }
+}
+direction = new vector3(0, 0, 1)
+old = undefined
+for (let i2 = 0; i2 < lados/2+1; i2++){
+    for (let i = 0; i < lados+1; i++){
+        if (old){
+            Models.sphere2.push([old.unit(), direction.unit()])
+        }
+        old = direction
+        direction = direction.rotate(new vector3(/*i2*22.5*0, 360/lados, 0))
+    }
+}
+*/
+/*let t = "Models.sphere = ["
+Models.sphere.forEach((v, i) => {
+    t += "[new vector3"+v[0].div(2).text()+", new vector3"+v[1].div(2).text()+"]"
+    if (i < Models.sphere.length-1){
+        t += ", \n"
+    }
+})
+t = t+"]"
+console.log(t)
+*/
+/*direction = new vector3(-1, 0, 0)
+old = undefined
+for (let z = 0; z < lados+1; z++){
+    old = undefined
+    for (let y = 0; y < lados+1; y++){
+        if (old){
+            Models.sphere2.push([old, direction])
+        }
+        old = direction
+        direction = direction.rotate(new vector3(360/lados, 0, 0))
+    }
+    direction = direction.rotate(new vector3(0, 0, 360/lados))
+}*/
+
+//letterWidth = windowSize.x/160.083333
+//letterHeight = windowSize.y/43.65
+let standardColor = "rgb(100, 255, 0)"
+let windowSize = new vector2(window.innerWidth, window.innerHeight)
+let letterRatio = Math.floor(windowSize.x/95.6)//20
+let screenSize = new vector2(159, Math.round(windowSize.y/letterRatio))//new vector2(159, 44)
+console.log("letterRatio, and Screen size respectively: \n-> "+letterRatio+", "+screenSize.text())
 ctx.font = letterRatio+"px monospace"
 ctx.textRendering = "optimizeSpeed"
 class screen{
@@ -224,35 +331,59 @@ class screen{
 
     fill(character){
         this.text = ""
+        this.colorMap = []
         for (let i = 0; i < this.size.x*this.size.y; i++){
             this.text += character
+            this.colorMap.push(standardColor)
         }
     }
 
     refresh(){
         ctx.fillStyle = "rgb(0, 0, 0)"
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "rgb(100, 255, 0)"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
         for (let line = 0; line < this.size.y; line++){
-            ctx.fillText(this.text.slice(line*this.size.x, line*this.size.x+this.size.x), 0, line*letterRatio+letterRatio)
+            for (let column = 0; column < this.size.x; column++){
+                ctx.fillStyle = this.colorMap[line*this.size.x+column]
+                //ctx.fillText(this.text[line*this.size.x+column] /*this.text.slice(line*this.size.x, line*this.size.x+this.size.x)*/, column*12, line*letterRatio+letterRatio)
+                ctx.fillText(this.text[line*this.size.x+column], column*windowSize.x/160.083333, line*letterRatio+letterRatio)
+            }
+            //ctx.fillStyle = this.colorMap[line*this.size.x+0]
+            //ctx.fillText(this.text.slice(line*this.size.x, line*this.size.x+this.size.x), 0, line*letterRatio+letterRatio)
         }
     }
 
-    drawPixel(character, position){
+    drawPixel(character, position, color=standardColor){
         position = new vector2(Math.floor(position.x), Math.floor(position.y))
         if (position.x >= 0 && position.y >= 0 && position.x < this.size.x && position.y < this.size.y){
             let index = this.size.x*position.y+position.x
             this.text = this.text.substring(0, index)+character+this.text.substring(index+character.length)
+            this.colorMap[index] = color
         }
     }
 
-    drawLine(charactere, position1, position2){
+    drawRect(charactere, position, size, color=standardColor){
+        for (let y = 0; y < size.y; y++){
+            for (let x = 0; x < size.x; x++){
+                this.drawPixel(charactere, position.add(new vector2(x, y)), color)
+            }
+        }
+    }
+
+    drawText(text, position, color=standardColor){
+        let i = 0
+        for (const char of text){
+            this.drawPixel(char, position.add(new vector2(i, 0)), color)
+            i++
+        }
+    }
+
+    drawLine(charactere, position1, position2, color=standardColor){
         let direction = (position2.sub(position1)).unit()
         let distance = position2.sub(position1).magnitude()
         let reference = position1
         for (let i = 0; i < distance; i++){
             reference = reference.add(direction)
-            Screen.drawPixel(charactere, reference)
+            Screen.drawPixel(charactere, reference, color)
         }
     }
 
@@ -266,41 +397,15 @@ class screen{
         })
     }
 }
-function transformVertice(v, angle){
-    let vertice = v
-    angle = angle.mul(Math.PI).div(180)
-    vertice = new vector3(vertice.x, vertice.y*Math.cos(angle.x)+Math.sin(angle.x)*vertice.z, vertice.z*Math.cos(angle.x)-Math.sin(angle.x)*vertice.y)
-    vertice = new vector3(vertice.x*Math.cos(angle.y)-Math.sin(angle.y)*vertice.z, vertice.y, vertice.z*Math.sin(angle.y)+Math.cos(angle.y)*vertice.z)
-    vertice = new vector3(vertice.x*Math.cos(angle.z)+Math.sin(angle.z)*vertice.y, -Math.sin(angle.z)*vertice.x+Math.cos(angle.z)*vertice.y, vertice.z)
-    return vertice
-}
-function to2d(vertice){
-    return new vector2(focalLenght*vertice.x/(focalLenght+vertice.z), focalLenght*vertice.y/(focalLenght+vertice.z))
-}
-
-
-
-
 
 //Principal
-
-
-
-let Screen = new screen(new vector2(159, 44))
-class object{
-    constructor(name, size, position, model){
-        this.name = name
-        this.size = size
-        this.position = position
-        this.orientation = new vector3(0, 0, 0)
-        this.velocity = new vector3()
-        this.rotationVelocity = new vector3(0, 0, 0)
-        this.model = model
-        this.anchored = false
-    }
-}
+let Screen = new screen(screenSize)
 const focalLenght = 70
-let Object = new object("cubo", new vector3(20, 20, 20), new vector3(0, 0, 0), Models.cube)
+
+let game = []
+game.objects = []
+game.ui = []
+let buttonsList = []
 
 let camera = []
 camera.position = new vector3(0, 0, 0)
@@ -308,94 +413,266 @@ camera.speed = 5
 camera.orientation = new vector3(0, 0, 0)
 camera.sensibility = 5
 
-function updateFrame(dt){
-    Object.orientation = Object.orientation.add(Object.rotationVelocity.mul(dt))
-    Object.position = Object.position.add(Object.velocity.mul(dt))
+class Button{
+    constructor(){
+        this.name = "button"
+        this.size = new vector2(10, 10)
+        this.position = new vector2(0, 0)
+        this.visible = true
+        this.text = "test"
+        this.textColor = "rgb(255, 255, 255)"
+        this.char = "#"
+        this.borderChar = "A"
+        this.color = standardColor
+        this.borderColor = "rgb(50, 50, 50)"
+        this.mouseDown = ()=>{}
+        this.mouseUp = ()=>{}
+        this.pressed = ()=>{}
+        game.ui.push(this)
+    }
+    relativeSize(size){
+        this.size = size.mul(screenSize)
+    }
+    relativePosition(position){
+        this.position = position.mul(screenSize)
+    }
+}
+let touchScreen = 'ontouchstart' in window || navigator.msMaxTouchPoints || false
+console.log(touchScreen)
+
+let upButton = new Button()
+upButton.text = "^"
+upButton.relativePosition(new vector2(0.2, 0.8))
+upButton.relativeSize(new vector2(.1, .1))
+upButton.color = "rgb(100, 100, 100)"
+
+let downButton = new Button()
+downButton.text = "v"
+downButton.relativePosition(new vector2(0.2, 0.9))
+downButton.relativeSize(new vector2(.1, .1))
+downButton.color = "rgb(120, 120, 120)"
+
+let rightButton = new Button()
+rightButton.text = ">"
+rightButton.relativePosition(new vector2(0.3, 0.9))
+rightButton.relativeSize(new vector2(.1, .1))
+rightButton.color = "rgb(100, 100, 100)"
+
+let leftButton = new Button()
+leftButton.text = "<"
+leftButton.relativePosition(new vector2(0.1, 0.9))
+leftButton.relativeSize(new vector2(.1, .1))
+leftButton.color = "rgb(100, 100, 100)"
+
+let flyUpButton = new Button()
+flyUpButton.text = "Cima"
+flyUpButton.relativePosition(new vector2(0.95, 0.8))
+flyUpButton.relativeSize(new vector2(.1, .1))
+flyUpButton.color = "rgb(120, 120, 120)"
+
+let flyDownButton = new Button()
+flyDownButton.text = "Baixo"
+flyDownButton.relativePosition(new vector2(0.95, 0.9))
+flyDownButton.relativeSize(new vector2(.1, .1))
+flyDownButton.color = "rgb(100, 100, 100)"
+
+flyUpButton.visible = touchScreen
+flyDownButton.visible = touchScreen
+upButton.visible = touchScreen
+downButton.visible = touchScreen
+rightButton.visible = touchScreen
+leftButton.visible = touchScreen
+
+leftButton.pressed = () => {
+    let forward = camera.orientation.forward()
+    camera.position = camera.position.add(forward)
+    console.log("up")
+}
+rightButton.pressed = () => {
+    let forward = camera.orientation.forward()
+    camera.position = camera.position.sub(forward)
+    console.log("down")
+}
+upButton.pressed = () => {
+    let forward = camera.orientation.forward()
+    let right = forward.rotate(new vector3(0, 90, 0))
+    camera.position = camera.position.add(right)
+    console.log("right")
+}
+downButton.pressed = () => {
+    let forward = camera.orientation.forward()
+    let right = forward.rotate(new vector3(0, 90, 0))
+    camera.position = camera.position.sub(right)
+    console.log("left")
+}
+
+flyUpButton.pressed = () => {
+    let forward = camera.orientation.forward()
+    let up = forward.rotate(new vector3(0, 0, 90))
+    camera.position = camera.position.add(up)
+    console.log("right")
+}
+flyDownButton.pressed = () => {
+    let forward = camera.orientation.forward()
+    let up = forward.rotate(new vector3(0, 0, 90))
+    camera.position = camera.position.sub(up)
+    console.log("left")
+}
+
+let currentID = 0
+class Object{
+    constructor(name, size, position = new vec, model){
+        this.name = name
+        this.size = size
+        this.position = position
+        this.orientation = new vector3()
+        this.velocity = new vector3()
+        this.rotationVelocity = new vector3()
+        this.model = model
+        this.color = "rgb(100, 255, 0)"
+        this.anchored = false
+        this.ID = currentID
+        currentID++
+        game.objects.push(this)
+    }
+}
+
+let Saturn = new Object("Saturn", new vector3(20, 20, 20), new vector3(), Models.sphere)
+Saturn.color = "rgb(255, 255, 50)"
+Saturn.rotationVelocity = new vector3(0, -50, 0)
+
+for (let i = 0; i < 350; i++){
+    let position = new vector3(Math.random()*100-50, 0, Math.random()*100-50)
+    position = position.unit().mul(Math.random()*5+30)
+    let object = new Object("Asteroid", new vector3(1, 1, 1), position, Models.dot)
+    object.orientation = new vector3(0, Math.random()*360, 0)
+    let pos = 20+Math.random()*20
+    if (i > 300){
+        pos = 45+Math.random()*5
+    }
+    object.position = object.orientation.forward().mul(pos)
+    object.color = "rgb(150, 150, 150)"
+    object.velocity = object.orientation.forward().rotate(new vector3(0, -90, 0)).mul(10)
 }
 
 document.addEventListener("keydown", function(event) {
-    /*if (event.key == "a"){
-        camera.position = camera.position.add(new vector3(camera.speed, 0, 0))
-    }
-    if (event.key == "d"){
-        camera.position = camera.position.add(new vector3(-camera.speed, 0, 0))
-    }
-    if (event.key == "s"){
-        camera.position = camera.position.add(new vector3(0, 0, camera.speed))
-    }
-    if (event.key == "w"){
-        camera.position = camera.position.add(new vector3(0, 0, -camera.speed))
-    }*/
-
-    if (event.key == "w"){
-        let direction = new vector3(0, 0, -1).rotate(camera.orientation)
-        camera.position = camera.position.add(direction)
-    }
+    let forward = camera.orientation.forward()
+    let right = forward.rotate(new vector3(0, 90, 0))
+    let up = forward.rotate(new vector3(0, 0, 90))
     if (event.key == "a"){
-        let direction = new vector3(1, 0, 0).rotate(camera.orientation)
-        camera.position = camera.position.add(direction)
+        camera.position = camera.position.add(forward)
     }
-    if (event.key == "d"){
-        let direction = new vector3(-1, 0, 0).rotate(camera.orientation)
-        camera.position = camera.position.add(direction)
+    if (event.key == "w"){
+        camera.position = camera.position.add(right)
     }
     if (event.key == "s"){
-        let direction = new vector3(0, 0, 1).rotate(camera.orientation)
-        camera.position = camera.position.add(direction)
+        camera.position = camera.position.add(right.mul(-1))
     }
-    
+    if (event.key == "d"){
+        camera.position = camera.position.add(forward.mul(-1))
+    }
     if (event.key == "z"){
-        camera.position = camera.position.add(new vector3(0, camera.speed, 0))
+        camera.position = camera.position.add(up)
     }
     if (event.key == "x"){
-        camera.position = camera.position.add(new vector3(0, -camera.speed, 0))
+        camera.position = camera.position.add(up.mul(-1))
     }
 
     if (event.key == "ArrowUp"){
-        camera.orientation = camera.orientation.add(new vector3(camera.sensibility, 0, 0))
-    }
-    if (event.key == "ArrowDown"){
         camera.orientation = camera.orientation.add(new vector3(-camera.sensibility, 0, 0))
     }
-    if (event.key == "ArrowRight"){
-        camera.orientation = camera.orientation.add(new vector3(0, camera.sensibility, 0))
+    if (event.key == "ArrowDown"){
+        camera.orientation = camera.orientation.add(new vector3(camera.sensibility, 0, 0))
     }
-    if (event.key == "ArrowLeft"){
+    if (event.key == "ArrowRight"){
         camera.orientation = camera.orientation.add(new vector3(0, -camera.sensibility, 0))
     }
+    if (event.key == "ArrowLeft"){
+        camera.orientation = camera.orientation.add(new vector3(0, camera.sensibility, 0))
+    }
+    
+    if (event.key == "q"){
+        camera.orientation = camera.orientation.add(new vector3(0, 0, -camera.sensibility))
+    }
+    if (event.key == "e"){
+        camera.orientation = camera.orientation.add(new vector3(0, 0, camera.sensibility))
+    }
 })
+let mousePosition = new vector2()
+let mouseDown = false
+
+document.addEventListener("mousemove", (event) => {
+    mousePosition = new vector2(event.clientX, event.clientY).div(windowSize).mul(screenSize)
+})
+document.body.onmousedown = () => {
+    mouseDown = true
+}
+document.body.onmouseup = () => {
+    mouseDown = false
+}
+
+function updateFrame(dt){
+    game.objects.forEach((object, i) => {
+        let acceleration = new vector3()
+        if (object.name != "Saturn"){
+            acceleration = acceleration.add(Saturn.position.sub(object.position).unit().mul(3))
+        }
+        object.velocity = object.velocity.add(acceleration.mul(dt))
+        object.orientation = object.orientation.add(object.rotationVelocity.mul(dt))
+        object.position = object.position.add(object.velocity.mul(dt))
+    })
+}
 
 function drawFrame(){
+    letterRatio = Math.floor(windowSize.x/95.6)
+    screen.size = new vector2(159, Math.round(windowSize.y/letterRatio))
     Screen.fill(" ")
-    console.log()
-    Object.model.forEach((line, i2) => {
-        let v1 = line[0].mul(Object.size)
-        let v2 = line[1].mul(Object.size)
-        v1 = v1.rotate(Object.orientation)
-        v2 = v2.rotate(Object.orientation)
-        v1 = v1.add(Object.position).add(camera.position)
-        v2 = v2.add(Object.position).add(camera.position)
-        v1 = v1.sub(new vector3(0, 0, -70))
-        v2 = v2.sub(new vector3(0, 0, -70))
-        v1 = v1.rotate(camera.orientation)
-        v2 = v2.rotate(camera.orientation)
-        v1 = v1.add(new vector3(0, 0, -70))
-        v2 = v2.add(new vector3(0, 0, -70))
-
-        v1 = to2d(v1)
-        v2 = to2d(v2)
-        v1 = v1.add(new vector2(Screen.size.x/2, Screen.size.y/2))
-        v2 = v2.add(new vector2(Screen.size.x/2, Screen.size.y/2))
-        Screen.drawLine("A", v1, v2)
+    game.objects.forEach((object, i) => {
+        object.model.forEach((line, i2) => {
+            let v1 = line[0].mul(object.size)
+            let v2 = line[1].mul(object.size)
+            v1 = v1.rotate(object.orientation)
+            v2 = v2.rotate(object.orientation)
+            v1 = v1.add(object.position).add(camera.position)
+            v2 = v2.add(object.position).add(camera.position)
+            v1 = v1.add(new vector3(0, 0, 70))
+            v2 = v2.add(new vector3(0, 0, 70))
+            v1 = v1.rotate(camera.orientation)
+            v2 = v2.rotate(camera.orientation)
+            v1 = v1.sub(new vector3(0, 0, 70))
+            v2 = v2.sub(new vector3(0, 0, 70))
+            v1 = v1.to2d(focalLenght)
+            v2 = v2.to2d(focalLenght)
+            v1 = v1.add(Screen.size.div(2))
+            v2 = v2.add(Screen.size.div(2))
+            Screen.drawLine("A", v1, v2, object.color)
+        })
     })
-    let dotZero = new vector3()
-    dotZero = to2d(dotZero)
-    dotZero = dotZero.add(new vector2(Screen.size.x/2, Screen.size.y/2))
-    Screen.drawPixel("X", dotZero)
-
-
+    game.ui.forEach((uiItem, i) =>{
+        if (uiItem.visible){
+            let uiItemPosition = uiItem.position.sub(uiItem.size.div(2))
+            Screen.drawRect(uiItem.char, uiItemPosition, uiItem.size, uiItem.color)
+            Screen.drawText(uiItem.text, uiItemPosition.add(new vector2(uiItem.text.length/2, uiItem.size.y/2)), uiItem.textColor)
+            if (uiItem instanceof Button){
+                if (mouseDown && mousePosition.x > uiItem.position.x-uiItem.size.x/2 && mousePosition.x < uiItem.position.x+uiItem.size.x/2 && mousePosition.y > uiItem.position.y-uiItem.size.y/2 && mousePosition.y < uiItem.position.y+uiItem.size.y/2){
+                    uiItem.pressed()
+                }
+            }
+        }
+    })
+    
+    Screen.drawText("@_guilherme.mor", new vector2(0, 0))
+    Screen.drawPixel("X", new vector2(Screen.size.x/2, Screen.size.y/2))
     Screen.refresh()
 }
+
+/*
+const vetor = new vector3(0, 0, 1)
+const angulo = new vector3(90, 0, 0)
+const resultado = vetor.rotate(angulo)
+console.log(resultado.text())
+*/
+
 
 const FPS = 12
 const wait = time => new Promise(res => setTimeout(res, time))
