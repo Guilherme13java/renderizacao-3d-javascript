@@ -318,10 +318,16 @@ for (let z = 0; z < lados+1; z++){
 //letterHeight = windowSize.y/43.65
 let standardColor = "rgb(100, 255, 0)"
 let windowSize = new vector2(window.innerWidth, window.innerHeight)
-let letterRatio = Math.floor(windowSize.x/95.6)//20
-let screenSize = new vector2(159, Math.round(windowSize.y/letterRatio))//new vector2(159, 44)
-console.log("letterRatio, and Screen size respectively: \n-> "+letterRatio+", "+screenSize.text())
-ctx.font = letterRatio+"px monospace"
+let letterRatio
+let screenSize
+function setLetterRatio(){
+    letterRatio = Math.floor(windowSize.x/95.6)//20
+    screenSize = new vector2(159, Math.round(windowSize.y/letterRatio))//new vector2(159, 44)
+    ctx.font = letterRatio+"px monospace"
+}
+setLetterRatio()
+
+//console.log("letterRatio, and Screen size respectively: \n-> "+letterRatio+", "+screenSize.text())
 ctx.textRendering = "optimizeSpeed"
 class screen{
     constructor(size){
@@ -438,7 +444,7 @@ class Button{
     }
 }
 let touchScreen = 'ontouchstart' in window || navigator.msMaxTouchPoints || false
-console.log(touchScreen)
+//console.log(touchScreen)
 
 let upButton = new Button()
 upButton.text = "^"
@@ -486,37 +492,37 @@ leftButton.visible = touchScreen
 leftButton.pressed = () => {
     let forward = camera.orientation.forward()
     camera.position = camera.position.add(forward)
-    console.log("up")
+    //console.log("up")
 }
 rightButton.pressed = () => {
     let forward = camera.orientation.forward()
     camera.position = camera.position.sub(forward)
-    console.log("down")
+    //console.log("down")
 }
 upButton.pressed = () => {
     let forward = camera.orientation.forward()
     let right = forward.rotate(new vector3(0, 90, 0))
     camera.position = camera.position.add(right)
-    console.log("right")
+    //console.log("right")
 }
 downButton.pressed = () => {
     let forward = camera.orientation.forward()
     let right = forward.rotate(new vector3(0, 90, 0))
     camera.position = camera.position.sub(right)
-    console.log("left")
+    //console.log("left")
 }
 
 flyUpButton.pressed = () => {
     let forward = camera.orientation.forward()
     let up = forward.rotate(new vector3(0, 0, 90))
     camera.position = camera.position.add(up)
-    console.log("right")
+    //console.log("right")
 }
 flyDownButton.pressed = () => {
     let forward = camera.orientation.forward()
     let up = forward.rotate(new vector3(0, 0, 90))
     camera.position = camera.position.sub(up)
-    console.log("left")
+    //console.log("left")
 }
 
 let currentID = 0
@@ -601,6 +607,17 @@ document.addEventListener("keydown", function(event) {
 let mousePosition = new vector2()
 let mouseDown = false
 
+
+window.addEventListener("pointermove", (event) => {
+    mousePosition = new vector2(event.clientX, event.clientY).div(windowSize).mul(screenSize)
+})
+window.addEventListener("pointerup", (event) => {
+    mouseDown = false
+})
+window.addEventListener("pointerdown", (event) => {
+    mouseDown = true
+})
+
 document.addEventListener("mousemove", (event) => {
     mousePosition = new vector2(event.clientX, event.clientY).div(windowSize).mul(screenSize)
 })
@@ -624,8 +641,7 @@ function updateFrame(dt){
 }
 
 function drawFrame(){
-    letterRatio = Math.floor(windowSize.x/95.6)
-    screen.size = new vector2(159, Math.round(windowSize.y/letterRatio))
+    setLetterRatio()
     Screen.fill(" ")
     game.objects.forEach((object, i) => {
         object.model.forEach((line, i2) => {
