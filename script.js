@@ -661,7 +661,7 @@ function drawFrame(){
             v2 = v2.to2d(focalLenght)
             v1 = v1.add(Screen.size.div(2))
             v2 = v2.add(Screen.size.div(2))
-            Screen.drawLine("⬜", v1, v2, object.color)
+            Screen.drawLine("■", v1, v2, object.color)
         })
     })
     game.ui.forEach((uiItem, i) =>{
