@@ -318,94 +318,114 @@ for (let z = 0; z < lados+1; z++){
 //letterHeight = windowSize.y/43.65
 let standardColor = "rgb(100, 255, 0)"
 let windowSize = new vector2(window.innerWidth, window.innerHeight)
-let letterRatio
-let screenSize
+ctx.textRendering = "optimizeSpeed"
+
+
+/*
+letterRatio = 20
+Tamanho da tela: 159, 44
+*/
+/*
+letterSize = new vector2()
 function setLetterRatio(){
-    letterRatio = Math.floor(windowSize.x/95.6)//20
-    screenSize = new vector2(159, Math.round(windowSize.y/letterRatio))//new vector2(159, 44)
+    let letterRatio = Math.floor(windowSize.x/95.6)
+    letterSize = new vector2(letterRatio*0.6, letterRatio)
+    screen.size = new vector2(159, Math.round(windowSize.y/letterSize.y))
     ctx.font = letterRatio+"px monospace"
 }
 setLetterRatio()
+*/
 
-//console.log("letterRatio, and Screen size respectively: \n-> "+letterRatio+", "+screenSize.text())
-ctx.textRendering = "optimizeSpeed"
-class screen{
-    constructor(size){
-        this.size = size
-        this.fill(" ")
-    }
 
-    fill(character){
-        this.text = ""
-        this.colorMap = []
-        for (let i = 0; i < this.size.x*this.size.y; i++){
-            this.text += character
-            this.colorMap.push(standardColor)
-        }
-    }
+let screen = []
+screen.text = ""
+screen.colorMap = []
+letterSize = new vector2()
+let screenSizeScale = 2
+function setLetterRatio(){
+    let letterRatio = Math.floor(windowSize.x/95.6)
+    letterSize = new vector2(letterRatio*0.6, letterRatio).div(screenSizeScale)
+    screen.size = new vector2(Math.round(159*screenSizeScale), Math.round(windowSize.y/letterSize.y))
+    ctx.font = letterSize.y+"px monospace"
+}
+setLetterRatio()
 
-    refresh(){
-        ctx.fillStyle = "rgb(0, 0, 0)"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        for (let line = 0; line < this.size.y; line++){
-            for (let column = 0; column < this.size.x; column++){
-                ctx.fillStyle = this.colorMap[line*this.size.x+column]
-                //ctx.fillText(this.text[line*this.size.x+column] /*this.text.slice(line*this.size.x, line*this.size.x+this.size.x)*/, column*12, line*letterRatio+letterRatio)
-                ctx.fillText(this.text[line*this.size.x+column], column*windowSize.x/160.083333, line*letterRatio+letterRatio)
-            }
-            //ctx.fillStyle = this.colorMap[line*this.size.x+0]
-            //ctx.fillText(this.text.slice(line*this.size.x, line*this.size.x+this.size.x), 0, line*letterRatio+letterRatio)
-        }
-    }
-
-    drawPixel(character, position, color=standardColor){
-        position = new vector2(Math.floor(position.x), Math.floor(position.y))
-        if (position.x >= 0 && position.y >= 0 && position.x < this.size.x && position.y < this.size.y){
-            let index = this.size.x*position.y+position.x
-            this.text = this.text.substring(0, index)+character+this.text.substring(index+character.length)
-            this.colorMap[index] = color
-        }
-    }
-
-    drawRect(charactere, position, size, color=standardColor){
-        for (let y = 0; y < size.y; y++){
-            for (let x = 0; x < size.x; x++){
-                this.drawPixel(charactere, position.add(new vector2(x, y)), color)
-            }
-        }
-    }
-
-    drawText(text, position, color=standardColor){
-        let i = 0
-        for (const char of text){
-            this.drawPixel(char, position.add(new vector2(i, 0)), color)
-            i++
-        }
-    }
-
-    drawLine(charactere, position1, position2, color=standardColor){
-        let direction = (position2.sub(position1)).unit()
-        let distance = position2.sub(position1).magnitude()
-        let reference = position1
-        for (let i = 0; i < distance; i++){
-            reference = reference.add(direction)
-            Screen.drawPixel(charactere, reference, color)
-        }
-    }
-
-    drawPolygon(charactere, positionsList, filled=false){
-        positionsList.forEach((position, index) => {
-            if (index == 0){
-                Screen.drawLine(charactere, position, positions[positions.length-1])
-            }else{
-                Screen.drawLine(charactere, position, positions[index-1])
-            }
-        })
+/*
+function setLetterRatio(){
+    screen.size = new vector2(159, 44)
+    let letterRatio = Math.floor(windowSize.y/screen.size.y)
+    letterSize = new vector2(letterRatio*0.5, letterRatio)
+    let standardCharWidth = ctx.measureText("a").width
+    ctx.font = letterRatio+"px monospace"
+}
+setLetterRatio()
+*/
+screen.fill = (character) => {
+    screen.text = ""
+    screen.colorMap = []
+    for (let i = 0; i < screen.size.x*screen.size.y; i++){
+        screen.text += character
+        screen.colorMap.push(standardColor)
     }
 }
 
+screen.refresh = () => {
+    ctx.fillStyle = "rgb(0, 0, 0)"
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    for (let line = 0; line < screen.size.y; line++){
+        for (let column = 0; column < screen.size.x; column++){
+            ctx.fillStyle = screen.colorMap[line*screen.size.x+column]
+            ctx.fillText(screen.text[line*screen.size.x+column], column*letterSize.x, (line+1)*letterSize.y) //Muda o tamanho da tela
+        }
+    }
+}
+
+screen.drawPixel = (character, position, color=standardColor) => {
+    position = new vector2(Math.floor(position.x), Math.floor(position.y))
+    if (position.x >= 0 && position.y >= 0 && position.x < screen.size.x && position.y < screen.size.y){
+        let index = screen.size.x*position.y+position.x
+        screen.text = screen.text.substring(0, index)+character+screen.text.substring(index+character.length)
+        screen.colorMap[index] = color
+    }
+}
+
+screen.drawRect = (charactere, position, size, color=standardColor) => {
+    for (let y = 0; y < size.y; y++){
+        for (let x = 0; x < size.x; x++){
+            screen.drawPixel(charactere, position.add(new vector2(x, y)), color)
+        }
+    }
+}
+
+screen.drawText = (text, position, color=standardColor) => {
+    let i = 0
+    for (const char of text){
+        screen.drawPixel(char, position.add(new vector2(i, 0)), color)
+        i++
+    }
+}
+
+screen.drawLine = (charactere, position1, position2, color=standardColor) => {
+    let direction = (position2.sub(position1)).unit()
+    let distance = position2.sub(position1).magnitude()
+    let reference = position1
+    for (let i = 0; i < distance; i++){
+        reference = reference.add(direction)
+        screen.drawPixel(charactere, reference, color)
+    }
+}
+
+screen.drawPolygon = (charactere, positionsList, filled=false) => {
+    positionsList.forEach((position, index) => {
+        if (index == 0){
+            screen.drawLine(charactere, position, positions[positions.length-1])
+        }else{
+            screen.drawLine(charactere, position, positions[index-1])
+        }
+    })
+}
+
 //Principal
-let Screen = new screen(screenSize)
 const focalLenght = 70
 
 let game = []
@@ -437,14 +457,13 @@ class Button{
         game.ui.push(this)
     }
     relativeSize(size){
-        this.size = size.mul(screenSize)
+        this.size = size.mul(screen.size)
     }
     relativePosition(position){
-        this.position = position.mul(screenSize)
+        this.position = position.mul(screen.size)
     }
 }
 let touchScreen = 'ontouchstart' in window || navigator.msMaxTouchPoints || false
-//console.log(touchScreen)
 
 let upButton = new Button()
 upButton.text = "^"
@@ -609,7 +628,7 @@ let mouseDown = false
 
 
 window.addEventListener("pointermove", (event) => {
-    mousePosition = new vector2(event.clientX, event.clientY).div(windowSize).mul(screenSize)
+    mousePosition = new vector2(event.clientX, event.clientY).div(windowSize).mul(screen.size)
 })
 window.addEventListener("pointerup", (event) => {
     mouseDown = false
@@ -619,7 +638,7 @@ window.addEventListener("pointerdown", (event) => {
 })
 
 document.addEventListener("mousemove", (event) => {
-    mousePosition = new vector2(event.clientX, event.clientY).div(windowSize).mul(screenSize)
+    mousePosition = new vector2(event.clientX, event.clientY).div(windowSize).mul(screen.size)
 })
 document.body.onmousedown = () => {
     mouseDown = true
@@ -642,15 +661,22 @@ function updateFrame(dt){
 
 function drawFrame(){
     setLetterRatio()
-    Screen.fill(" ")
+    screen.fill(" ", "rgb(100, 100, 100)")
+    screen.drawPixel("P", new vector2(screen.size.x, 0), "rgb(255, 255, 255)")
     game.objects.forEach((object, i) => {
         object.model.forEach((line, i2) => {
-            let v1 = line[0].mul(object.size)
-            let v2 = line[1].mul(object.size)
+            /*
+            let size = object.size
+            let position = object.position.add(camera.position)
+            */
+            let size = object.size.mul(screen.size.y).div(20)
+            let position = object.position.add(camera.position).mul(screen.size.y).div(20)
+            let v1 = line[0].mul(size)
+            let v2 = line[1].mul(size)
             v1 = v1.rotate(object.orientation)
             v2 = v2.rotate(object.orientation)
-            v1 = v1.add(object.position).add(camera.position)
-            v2 = v2.add(object.position).add(camera.position)
+            v1 = v1.add(position)
+            v2 = v2.add(position)
             v1 = v1.add(new vector3(0, 0, 70))
             v2 = v2.add(new vector3(0, 0, 70))
             v1 = v1.rotate(camera.orientation)
@@ -659,16 +685,16 @@ function drawFrame(){
             v2 = v2.sub(new vector3(0, 0, 70))
             v1 = v1.to2d(focalLenght)
             v2 = v2.to2d(focalLenght)
-            v1 = v1.add(Screen.size.div(2))
-            v2 = v2.add(Screen.size.div(2))
-            Screen.drawLine("▨", v1, v2, object.color)
+            v1 = v1.add(screen.size.div(2))
+            v2 = v2.add(screen.size.div(2))
+            screen.drawLine("▆", v1, v2, object.color)
         })
     })
     game.ui.forEach((uiItem, i) =>{
         if (uiItem.visible){
             let uiItemPosition = uiItem.position.sub(uiItem.size.div(2))
-            Screen.drawRect(uiItem.char, uiItemPosition, uiItem.size, uiItem.color)
-            Screen.drawText(uiItem.text, uiItemPosition.add(new vector2(uiItem.text.length/2, uiItem.size.y/2)), uiItem.textColor)
+            screen.drawRect(uiItem.char, uiItemPosition, uiItem.size, uiItem.color)
+            screen.drawText(uiItem.text, uiItemPosition.add(new vector2(uiItem.text.length/2, uiItem.size.y/2)), uiItem.textColor)
             if (uiItem instanceof Button){
                 if (mouseDown && mousePosition.x > uiItem.position.x-uiItem.size.x/2 && mousePosition.x < uiItem.position.x+uiItem.size.x/2 && mousePosition.y > uiItem.position.y-uiItem.size.y/2 && mousePosition.y < uiItem.position.y+uiItem.size.y/2){
                     uiItem.pressed()
@@ -677,9 +703,9 @@ function drawFrame(){
         }
     })
     
-    Screen.drawText("@_guilherme.mor", new vector2(0, 0))
-    Screen.drawPixel("X", new vector2(Screen.size.x/2, Screen.size.y/2))
-    Screen.refresh()
+    screen.drawText("@_guilherme.mor", new vector2(0, 0))
+    screen.drawPixel("X", screen.size.div(2))
+    screen.refresh()
 }
 
 /*
